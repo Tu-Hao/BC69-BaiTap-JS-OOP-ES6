@@ -50,30 +50,42 @@ class KhachHang extends Person {
 // Lớp ListPerson để quản lý các đối tượng
 class ListPerson {
     constructor() {
-        this.personList = []; // Mảng rỗng để lưu trữ danh sách các đối tượng
+        this.personList = JSON.parse(localStorage.getItem('personList')) || []; // Lấy danh sách từ localStorage
     }
 
     addPerson(person) {
-        this.personList.push(person); // Thêm đối tượng
+        if (this.personList.some(p => p.id === person.id)) {
+            alert('ID đã tồn tại!');
+            return false;
+        }
+        this.personList.push(person);
+        this.saveToLocalStorage(); // Lưu vào localStorage
+        return true;
     }
 
     removePerson(id) {
-        this.personList = this.personList.filter(person => person.id !== id); // Xóa đối tượng theo id
+        this.personList = this.personList.filter(person => person.id !== id);
+        this.saveToLocalStorage(); // Lưu vào localStorage
     }
 
     updatePerson(updatedPerson) {
-        const index = this.personList.findIndex(person => person.id === updatedPerson.id); // Tìm đối tượng cần cập nhật
+        const index = this.personList.findIndex(person => person.id === updatedPerson.id);
         if (index !== -1) {
-            this.personList[index] = updatedPerson; // Cập nhật thông tin đối tượng
+            this.personList[index] = updatedPerson;
+            this.saveToLocalStorage(); // Lưu vào localStorage
         }
     }
 
-    sortPersons() {
-        this.personList.sort((a, b) => a.name.localeCompare(b.name)); // Sắp xếp theo tên
+    sortPersonsAsc() {
+        this.personList.sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    filterPersons(type) {
-        return this.personList.filter(person => person instanceof type); // Lọc danh sách theo loại đối tượng
+    sortPersonsDesc() {
+        this.personList.sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    saveToLocalStorage() {
+        localStorage.setItem('personList', JSON.stringify(this.personList));
     }
 }
 
@@ -107,9 +119,10 @@ document.getElementById('personForm').addEventListener('submit', function(event)
         person = new KhachHang(name, address, id, email, companyName, billValue, rating);
     }
 
-    listPerson.addPerson(person);
-    renderPersonList();
-    this.reset();
+    if (listPerson.addPerson(person)) {
+        renderPersonList();
+        this.reset();
+    }
 });
 
 // Hàm hiển thị danh sách người dùng
@@ -143,7 +156,6 @@ function renderPersonList() {
         personList.appendChild(row);
     });
 }
-
 
 // Hàm xóa người dùng theo ID
 function removePerson(id) {
@@ -201,3 +213,22 @@ document.getElementById('type').addEventListener('change', function() {
     }
 });
 
+// Hàm tạo chức năng sắp xếp theo tên
+let isAsc = true;
+
+document.getElementById('sortIcon').addEventListener('click', function() {
+    if (isAsc) {
+        listPerson.sortPersonsAsc();
+        this.classList.remove('fa-arrow-down');
+        this.classList.add('fa-arrow-up');
+    } else {
+        listPerson.sortPersonsDesc();
+        this.classList.remove('fa-arrow-up');
+        this.classList.add('fa-arrow-down');
+    }
+    isAsc = !isAsc;
+    renderPersonList();
+});
+
+// Initial render
+renderPersonList();
